@@ -43,5 +43,15 @@ export class RolesAnywhere extends Stack {
         },
       ],
     });
+
+    // TODO: create roles for profile
+
+    new raw.CfnProfile(this, 'Profile', {
+      name: `${appName}-profile`,
+      enabled: true,
+      acceptRoleSessionName,
+      roleArns: [], // TODO
+      durationSeconds: maxSessionDuration?.toSeconds() ?? DEFAULT_MAX_SESSION_DURATION,
+    });
   }
 }
