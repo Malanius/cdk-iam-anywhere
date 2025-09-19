@@ -7,6 +7,9 @@
   "[github-actions-workflow]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
+  "editor.codeActionsOnSave": {
+    "source.organizeImports.biome": "explicit"
+  },
   "explorer.fileNesting.patterns": {
     ".projenrc.ts": ".projenrc.*.ts"
   }
