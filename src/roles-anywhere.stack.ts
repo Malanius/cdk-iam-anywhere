@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import type { StackProps } from 'aws-cdk-lib';
 import { Duration, Stack } from 'aws-cdk-lib';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import * as raw from 'aws-cdk-lib/aws-rolesanywhere';
 import type { Construct } from 'constructs';
 
@@ -26,7 +27,7 @@ export interface RolesAnywhereProps extends StackProps {
   acceptRoleSessionName?: boolean;
   /**
    * Maximum session duration for the profile (between 900 seconds and 43200 seconds (12 hours)).
-   * 
+   *
    * @example Duration.hours(1)
    *
    * @default 43200 (12 hours)
@@ -67,13 +68,25 @@ export class RolesAnywhere extends Stack {
       ],
     });
 
-    // TODO: create roles for profile
+    const profileRole = new iam.Role(this, 'Role', {
+      roleName: `${appName}-iam-anywhere-role`,
+      description: 'Role for IAM Roles Anywhere',
+      assumedBy: new iam.ServicePrincipal('rolesanywhere.amazonaws.com'),
+      managedPolicies: [iam.ManagedPolicy.fromAwsManagedPolicyName('ReadOnlyAccess')],
+    });
+    profileRole.assumeRolePolicy?.addStatements(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        principals: [new iam.ServicePrincipal('rolesanywhere.amazonaws.com')],
+        actions: ['sts:AssumeRole', 'sts:SetSourceIdentity', 'sts:TagSession'],
+      })
+    );
 
     new raw.CfnProfile(this, 'Profile', {
-      name: `${appName}-profile`,
+      name: `${appName}-iam-anywhere`,
       enabled: true,
       acceptRoleSessionName,
-      roleArns: [], // TODO
+      roleArns: [profileRole.roleArn],
       durationSeconds: maxSessionDuration?.toSeconds() ?? DEFAULT_MAX_SESSION_DURATION,
     });
   }
