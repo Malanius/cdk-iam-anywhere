@@ -23,6 +23,16 @@ export class CdkAnywhereProfile extends Construct {
       assumedBy: new iam.ServicePrincipal('rolesanywhere.amazonaws.com'),
       maxSessionDuration: maxSessionDuration || DEFAULT_MAX_SESSION_DURATION,
     });
+    cdkRole.assumeRolePolicy?.addStatements(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        principals: [new iam.ServicePrincipal('rolesanywhere.amazonaws.com')],
+        actions: [
+          'sts:TagSession',
+          'sts:SetSourceIdentity',
+        ],
+      })
+    );
 
     const assumeCdkPolicy = new iam.Policy(this, 'AssumeCdkPolicy', {
       policyName: `${appName}-cdk-policy`,
