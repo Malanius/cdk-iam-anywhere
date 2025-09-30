@@ -21,7 +21,7 @@ export class CdkAnywhereProfile extends Construct {
       roleName: `${appName}-roles-anywhere-cdk`,
       description: 'Role for AWS CDK deployments',
       assumedBy: new iam.ServicePrincipal('rolesanywhere.amazonaws.com'),
-      maxSessionDuration,
+      maxSessionDuration: maxSessionDuration || DEFAULT_MAX_SESSION_DURATION,
     });
 
     const assumeCdkPolicy = new iam.Policy(this, 'AssumeCdkPolicy', {
