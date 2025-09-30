@@ -1,28 +1,29 @@
 import { type Duration, Stack } from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as raw from 'aws-cdk-lib/aws-rolesanywhere';
 import { Construct } from 'constructs';
+import { DEFAULT_MAX_SESSION_DURATION } from './defaults';
 
-export interface CdkProfileRoleProps {
+export interface CdkAnywhereProfileProps {
   appName: string;
-  maxSessionDuration: Duration;
+  maxSessionDuration?: Duration;
+  acceptRoleSessionName?: boolean;
 }
 
-export class CdkProfileRole extends Construct {
-  public readonly role: iam.Role;
-
-  constructor(scope: Construct, id: string, props: CdkProfileRoleProps) {
+export class CdkAnywhereProfile extends Construct {
+  constructor(scope: Construct, id: string, props: CdkAnywhereProfileProps) {
     super(scope, id);
 
-    const { appName, maxSessionDuration } = props;
+    const { appName, maxSessionDuration, acceptRoleSessionName } = props;
     const account = Stack.of(this).account;
 
-    this.role = new iam.Role(this, 'CdkProfileRole', {
+    const cdkRole = new iam.Role(this, 'CdkProfileRole', {
       roleName: `${appName}-roles-anywhere-cdk`,
       description: 'Role for AWS CDK deployments',
       assumedBy: new iam.ServicePrincipal('rolesanywhere.amazonaws.com'),
       maxSessionDuration,
     });
-    
+
     const assumeCdkPolicy = new iam.Policy(this, 'AssumeCdkPolicy', {
       policyName: `${appName}-cdk-policy`,
       statements: [
@@ -37,6 +38,14 @@ export class CdkProfileRole extends Construct {
         }),
       ],
     });
-    this.role.attachInlinePolicy(assumeCdkPolicy);
+    cdkRole.attachInlinePolicy(assumeCdkPolicy);
+
+    new raw.CfnProfile(this, 'CdkProfile', {
+      name: `${appName}-cdk-anywhere`,
+      enabled: true,
+      acceptRoleSessionName,
+      roleArns: [cdkRole.roleArn],
+      durationSeconds: (maxSessionDuration || DEFAULT_MAX_SESSION_DURATION).toSeconds(),
+    });
   }
 }

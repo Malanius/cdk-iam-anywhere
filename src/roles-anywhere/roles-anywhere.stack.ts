@@ -1,12 +1,10 @@
 import { readFileSync } from 'node:fs';
 import type { StackProps } from 'aws-cdk-lib';
-import { Duration, Stack } from 'aws-cdk-lib';
+import { type Duration, Stack } from 'aws-cdk-lib';
 import * as raw from 'aws-cdk-lib/aws-rolesanywhere';
 import type { Construct } from 'constructs';
-import { CdkProfileRole } from './cdk-profile-role';
-
-const DEFAULT_NOTIFICATIONS_TRESHOLD_DAYS = 45;
-const DEFAULT_MAX_SESSION_DURATION = Duration.hours(12).toSeconds();
+import { CdkAnywhereProfile } from './cdk-profile';
+import { DEFAULT_NOTIFICATIONS_TRESHOLD_DAYS } from './defaults';
 
 export interface RolesAnywhereProps extends StackProps {
   /**
@@ -39,7 +37,7 @@ export class RolesAnywhere extends Stack {
   constructor(scope: Construct, id: string, props: RolesAnywhereProps) {
     super(scope, id, props);
 
-    const { appName, notificationsTresholdDays, maxSessionDuration, acceptRoleSessionName } = props;
+    const { appName, notificationsTresholdDays } = props;
 
     const x509CertificateData = readFileSync('certs/ca.crt', 'utf8');
 
@@ -68,17 +66,8 @@ export class RolesAnywhere extends Stack {
       ],
     });
 
-    const cdkRole = new CdkProfileRole(this, 'CdkProfileRole', {
-      appName,
-      maxSessionDuration: maxSessionDuration ?? Duration.hours(12),
-    });
-
-    new raw.CfnProfile(this, 'Profile', {
-      name: `${appName}-iam-anywhere`,
-      enabled: true,
-      acceptRoleSessionName,
-      roleArns: [cdkRole.role.roleArn],
-      durationSeconds: maxSessionDuration?.toSeconds() ?? DEFAULT_MAX_SESSION_DURATION,
+    new CdkAnywhereProfile(this, 'CdkProfile', {
+      ...props,
     });
   }
 }
