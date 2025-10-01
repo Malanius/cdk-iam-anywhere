@@ -42,7 +42,7 @@ export class CdkAnywhereProfile extends Construct {
           actions: [
             'sts:AssumeRole',
             'sts:TagSession',
-            // 'sts:SetSourceIdentity',
+            'sts:SetSourceIdentity',
           ],
           resources: [`arn:aws:iam::${account}:role/cdk-*`],
         }),
